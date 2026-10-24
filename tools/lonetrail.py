@@ -149,17 +149,30 @@ def bar(done, total, width=BAR_W):
 
 # ==============================================================================
 # 主题号读写
+# 两种入口都认：笔记版的 \SelectTheme{NNN}，书籍版（lonetrailbook）的
+# documentclass 选项 theme=NNN。写入时改回读到的那种形式。
 # ==============================================================================
+_THEME_DOCCLASS = re.compile(r"(theme\s*=\s*)(\d{3})")
+_THEME_SELECT = re.compile(r"(\\SelectTheme\{)([^}]*)(\})")
+
+
 def read_theme():
     with open(MAIN_TEX, encoding="utf-8") as f:
-        m = re.search(r"\\SelectTheme\{([^}]*)\}", f.read())
-    return m.group(1).strip() if m else "001"
+        s = f.read()
+    m = _THEME_DOCCLASS.search(s)
+    if m:
+        return m.group(2).strip()
+    m = _THEME_SELECT.search(s)
+    return m.group(2).strip() if m else "000"
 
 
 def write_theme(theme):
     with open(MAIN_TEX, encoding="utf-8") as f:
         s = f.read()
-    s = re.sub(r"\\SelectTheme\{[^}]*\}", "\\\\SelectTheme{%s}" % theme, s)
+    if _THEME_DOCCLASS.search(s):
+        s = _THEME_DOCCLASS.sub(lambda m: m.group(1) + theme, s)
+    else:
+        s = _THEME_SELECT.sub(lambda m: m.group(1) + theme + m.group(3), s)
     with open(MAIN_TEX, "w", encoding="utf-8", newline="\n") as f:
         f.write(s)
 

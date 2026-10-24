@@ -1,0 +1,79 @@
+% 可测空间
+\section{$\sigma$-代数}
+
+\begin{wenxintishi}[本章在做什么]
+集合论给出「哪些子集值得测量」，$\sigma$-代数把这件事变成一条封闭性公理.
+先承认一部分子集可测，再要求它们在补、可数并、可数交下仍然可测，就得到一个
+足够大又能自洽运作的舞台.
+\end{wenxintishi}
+
+\begin{definition}[$\sigma$-代数]
+设 $X$ 为非空集合，$\mathcal{A}\subseteq\mathcal{P}(X)$. 若 $\mathcal{A}$ 满足
+\begin{enumerate}[label=\roman*.]
+  \item $X\in\mathcal{A}$；
+  \item $A\in\mathcal{A}\Rightarrow X\setminus A\in\mathcal{A}$；
+  \item $A_1,A_2,\dots\in\mathcal{A}\Rightarrow \bigcup_{n=1}^{\infty}A_n\in\mathcal{A}$，
+\end{enumerate}
+则称 $\mathcal{A}$ 为 $X$ 上的一个 \emph{$\sigma$-代数}，称 $(X,\mathcal{A})$ 为可测空间，
+称 $\mathcal{A}$ 中的元素为可测集.
+\end{definition}
+
+\begin{theorem}[$\sigma$-代数的最小生成]
+任一非空集族 $\mathcal{E}$ 都被某个 $\sigma$-代数包含，且所有包含 $\mathcal{E}$ 的
+$\sigma$-代数之交仍为包含 $\mathcal{E}$ 的 $\sigma$-代数. 记之为
+$\sigma(\mathcal{E})$，称为由 $\mathcal{E}$ 生成的 $\sigma$-代数.
+\end{theorem}
+
+\begin{proof}
+记
+\[
+\mathcal{F}=\bigcap\{\mathcal{A}\supseteq\mathcal{E}:\mathcal{A}\text{ 是 }\sigma\text{-代数}\}.
+\]
+由 $\mathcal{P}(X)$ 本身是 $\sigma$-代数，交非空. $\sigma$-代数族对任意交封闭，故
+$\mathcal{F}$ 是 $\sigma$-代数，且显然 $\mathcal{E}\subseteq\mathcal{F}$. 由构造它是最小的.
+\end{proof}
+
+\section{可测函数}
+
+\begin{definition}[可测映射]
+设 $(X,\mathcal{A})$、$(Y,\mathcal{B})$ 为可测空间. 称 $f:X\to Y$ 是可测映射，
+若对任意 $B\in\mathcal{B}$ 有 $f^{-1}(B)\in\mathcal{A}$.
+\end{definition}
+
+\begin{example}[可测性的有限判别]
+设 $\mathcal{B}=\sigma(\mathcal{E})$. 证明 $f$ 可测当且仅当对每个 $E\in\mathcal{E}$
+都有 $f^{-1}(E)\in\mathcal{A}$.
+\end{example}
+
+\begin{solution}
+记 $\mathcal{G}=\{B\subseteq Y:f^{-1}(B)\in\mathcal{A}\}$. 直接验证 $\mathcal{G}$ 是
+$Y$ 上的 $\sigma$-代数：它对补与可数并封闭（原像保持），且 $Y\in\mathcal{G}$
+因为 $f^{-1}(Y)=X\in\mathcal{A}$. 由假设 $\mathcal{E}\subseteq\mathcal{G}$，
+于是 $\mathcal{B}=\sigma(\mathcal{E})\subseteq\mathcal{G}$.
+\end{solution}
+
+\begin{remark}
+有限判别把「验证无穷多个可测集」压缩成「验证一个生成族」，实际计算时通常取
+区间或开集作生成元.
+\end{remark}
+
+\section{初等习题}
+
+\begin{exercises}
+在可测空间 $(X,\mathcal{A})$ 中判断下列命题是否成立，并给出理由.
+\end{exercises}
+
+\begin{exercise}
+若 $\mathcal{A}$ 与 $\mathcal{B}$ 都是 $X$ 上的 $\sigma$-代数，则 $\mathcal{A}\cap\mathcal{B}$ 也是.
+\end{exercise}
+\begin{exercise}
+若 $A_n$ 可测，则 $\limsup A_n$ 与 $\liminf A_n$ 均可测.
+\end{exercise}
+\begin{exercise}
+常值函数对任意 $\sigma$-代数 $\mathcal{B}$ 都可测.
+\end{exercise}
+
+\begin{analysispath}
+$\sigma$-代数之交可以任意多个，$\sigma$-代数之并通常不再是 $\sigma$-代数.
+把两个 $\sigma$-代数的并生成的 $\sigma$-代数，是理解独立事件共同信息的第一步.
+\end{analysispath}

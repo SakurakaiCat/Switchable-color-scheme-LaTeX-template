@@ -1,131 +1,339 @@
-% ==============================================================================
-%  styles/cover.tex —— 封面版式
-%  调用：\DisplayCover（开关在 main.tex，注释掉即可不显示封面）
-%  要改的标题/作者/学生信息/课程/参考文献都在 main.tex 的“封面信息”区
-% ==============================================================================
+% ============================================================================
+%  styles/cover.tex — 出版家具：封面 / 扉页 / 版权页 / 封底 / 卷隔页 / 章扉页
+%
+%  全部版式随 \paperwidth / \paperheight 相对定位，换开本无需改数值；
+%  颜色全部来自主题 token，换肤即时生效。
+%
+%  实现机制（书籍化改造的关键）：
+%    全出血页 = 普通页（无 \newgeometry）+ 正文流内的
+%    tikzpicture[remember picture, overlay]（\LT@FullPage 壳）。
+%    不要把带透明度的绘图搬进 shipout 钩子（eso-pic / l3 shipout）：
+%    本工具链下钩子材料里的 ExtGState 资源登记不可靠，pgf 的 opacity
+%    会被按实色渲染（淡色水印/淡洗会变成实色墨块）；正文流内则一切正常。
+%    remember picture 坐标按惯例第二遍收敛（目录/交叉引用本来就要多遍）。
+%
+%  与原笔记模板的差别（书籍化改造的核心）：
+%    · 删除「课程名 / 学生姓名 / 学号 / 日期」信息表 —— 那是作业报告家具，
+%      出版形制换成「丛书行 / 卷次行 / 作者 / 出版方 / 版次 / 书号」。
+%    · 删除参考文献栏与致谢栏 —— 移到前装致谢页。
+%    · 封面增加左缘三色出血带与底部三色带，作为孤星母题的书籍化收敛。
+% ============================================================================
 
-\newcommand{\LoneCoverSepI}{\resizebox{270pt}{4pt}{\includegraphics{assets/pdf/separator_1.pdf}}}
-\newcommand{\SSS}{\LoneCoverSepI}% 向后兼容别名
-\newcommand{\LoneCoverSepII}{\resizebox{199pt}{!}{\includegraphics{assets/pdf/cover_sep.pdf}}}
-\newcommand{\FFF}{\LoneCoverSepII}% 向后兼容别名
-
-% ---------------- 标题 ----------------
-\newcommand{\TitleText}{%
-	\fontsize{36}{12}\selectfont\color{qiancheng}\XeTeXinterchartokenstate=0
-	\AvantGarde\addfontfeatures{LetterSpace=-5} \LoneTitleI{}
-	\SSS \\[8pt]
-	\SiYuan \LoneTitleII
+% --- 全出血页壳：翻页 → 流内整页 overlay → 空盒撑页 → 付印 -------------------
+% 坐标系：current page.*（remember picture）；\ifLT@fullbleedpage 供
+% background 钩子跳过网格与三色角标（出血页自带母题）。
+\newcommand{\LT@FullPage}[1]{%
+  \clearpage
+  \LT@fullbleedpagetrue
+  \thispagestyle{empty}%
+  \begin{tikzpicture}[remember picture, overlay]#1\end{tikzpicture}%
+  \null
+  \clearpage
+  \LT@fullbleedpagefalse
 }
 
-% ---------------- 作者 ----------------
-\newcommand{\AuthorText}{%
-	\fontsize{15}{16}\selectfont\color{qiancheng}\XeTeXinterchartokenstate=0
-	\AvantGarde\addfontfeatures{LetterSpace=-5} \LoneAuthor
+% --- 左缘三色竖带（书脊侧，出血进入裁切区）----------------------------------
+\newcommand{\LT@SpineBand}{%
+  \fill[lv] (current page.south west) rectangle ++(0.011\paperwidth,\paperheight);
+  \fill[huang] ([xshift=0.011\paperwidth]current page.south west)
+    rectangle ++(0.011\paperwidth,\paperheight);
+  \fill[hong] ([xshift=0.022\paperwidth]current page.south west)
+    rectangle ++(0.011\paperwidth,\paperheight);%
 }
 
-% ---------------- 信息表（COURSE / NAME / STUDENT ID / DATE） ----------------
-% 左列橙色标签（Avant Garde 加粗），右列内容（思源黑体加粗）用封面左侧三竖条最右那条的 hong 色。
-\newlength{\InfoLabelW}   \setlength{\InfoLabelW}{96pt}
-\newlength{\InfoValueW}   \setlength{\InfoValueW}{190pt}
-\newlength{\InfoGap}      \setlength{\InfoGap}{14pt}
-
-% \InfoRow{标签}{内容}
-\newcommand{\InfoRow}[2]{%
-	\makebox[\InfoLabelW][l]{%
-		\fontsize{15}{15}\selectfont\bfseries
-		\AvantGarde\XeTeXinterchartokenstate=0\color{qiancheng}#1}%
-	\hspace{14pt}%
-	\makebox[\InfoValueW][l]{%
-		\fontsize{15}{15}\selectfont\bfseries
-		\SiYuan\XeTeXinterchartokenstate=0\color{heise}#2}%
+% --- 内框细线（封面/隔页/章扉共用）------------------------------------------
+\newcommand{\LT@HairFrame}{%
+  \draw[InkMuted, opacity=0.4, line width=0.6pt]
+    ([xshift=0.075\paperwidth, yshift=0.030\paperheight]current page.south west)
+    rectangle
+    ([xshift=-0.055\paperwidth, yshift=-0.030\paperheight]current page.north east);%
 }
 
-\newcommand{\InfoTable}{%
-	\begin{tabular}[t]{@{}l@{}}
-		\InfoRow{COURSE}{\LoneCourseI} \\[\InfoGap]
-		\InfoRow{NAME}{\LoneStudentName} \\[\InfoGap]
-		\InfoRow{STUDENT ID}{\LoneStudentID} \\[\InfoGap]
-		\InfoRow{DATE}{\LoneDate} \\
-	\end{tabular}%
+% --- 底部三色横带 ------------------------------------------------------------
+\newcommand{\LT@TriBand}{%
+  \fill[lv]   (current page.south west) rectangle ++(0.34\paperwidth,0.022\paperheight);
+  \fill[huang] ([xshift=0.34\paperwidth]current page.south west)
+    rectangle ++(0.33\paperwidth,0.022\paperheight);
+  \fill[hong] ([xshift=0.67\paperwidth]current page.south west)
+    rectangle ++(0.33\paperwidth,0.022\paperheight);%
 }
 
-% ---------------- 封面线 + 参考文献 + 致谢 ----------------
-\newcommand{\ReferenceText}{%
-	\FFF \\[14pt]
-	\fontsize{9}{7}\selectfont\color{qiancheng}\AvantGarde\XeTeXinterchartokenstate=0 Reference: \\
-	\fontsize{6}{7}\selectfont\color{heise}\AvantGarde\XeTeXinterchartokenstate=0 \LoneRefA \\
-	\fontsize{6}{7}\selectfont\color{heise}\AvantGarde\XeTeXinterchartokenstate=0 \LoneRefB \\
-	\fontsize{6}{7}\selectfont\color{heise}\AvantGarde\XeTeXinterchartokenstate=0 \LoneRefC \\[12pt]
-	\fontsize{9}{7}\selectfont\color{qiancheng}\AvantGarde\XeTeXinterchartokenstate=0 Acknowledgements: \\
-	\fontsize{6}{7}\selectfont\color{heise}\AvantGarde\XeTeXinterchartokenstate=0 \LoneAcknowledgements \\
+% ============================================================================
+%  封面
+% ============================================================================
+\newcommand{\FrontCover}{%
+  \LT@FullPage{%
+    % --- 纸面 ---
+    \fill[PaperIvory] (current page.south west) rectangle (current page.north east);
+    \LT@SpineBand
+
+    % --- 极淡数字母题水印 ---
+    \node[anchor=center, opacity=0.055, text=InkBrown]
+      at ([xshift=0.06\paperwidth, yshift=0.16\paperheight]current page.center)
+      {\resizebox{!}{0.30\paperheight}{\LT@watermark}};
+
+    % --- 内框细线 ---
+    \LT@HairFrame
+
+    % --- 丛书行 ---
+    \node[anchor=north west, text=InkMuted, inner sep=0pt]
+      at ([xshift=0.10\paperwidth, yshift=-0.075\paperheight]current page.north west)
+      {\kaishu\fontsize{12}{15}\selectfont\LT@series};
+    \draw[InkBrown, line width=0.9pt]
+      ([xshift=0.10\paperwidth, yshift=-0.100\paperheight]current page.north west) --
+      ([xshift=0.62\paperwidth, yshift=-0.100\paperheight]current page.north west);
+
+    % --- 主标题 ---
+    \node[anchor=north west, text=InkBrown, inner sep=0pt,
+          text width=0.72\paperwidth, align=left]
+      at ([xshift=0.10\paperwidth, yshift=-0.32\paperheight]current page.north west)
+      {\songti\bfseries\fontsize{34}{42}\selectfont\LT@title};
+    \node[anchor=north west, text=InkMuted, inner sep=0pt,
+          text width=0.72\paperwidth, align=left]
+      at ([xshift=0.10\paperwidth, yshift=-0.455\paperheight]current page.north west)
+      {\itshape\fontsize{12}{16}\selectfont\LT@subtitle};
+
+    % --- 卷次行 ---
+    \node[anchor=north west, text=structurecolor, inner sep=0pt]
+      at ([xshift=0.10\paperwidth, yshift=-0.585\paperheight]current page.north west)
+      {\kaishu\fontsize{15}{19}\selectfont\LT@volumeline};
+    \node[anchor=north west, text=InkMuted, inner sep=0pt]
+      at ([xshift=0.10\paperwidth, yshift=-0.635\paperheight]current page.north west)
+      {\LoneDisplay\fontsize{9.5}{12}\selectfont\LT@volumelineEN};
+
+    % --- 代表公式槽（图灵 LADR 风格）---
+    \node[anchor=north west, text=InkMuted, inner sep=0pt]
+      at ([xshift=0.10\paperwidth, yshift=-0.700\paperheight]current page.north west)
+      {\fontsize{13}{18}\selectfont\LT@coverline};
+
+    % --- 底部：作者 + 出版方 ---
+    \draw[InkMuted, line width=0.6pt, opacity=0.75]
+      ([xshift=0.10\paperwidth, yshift=0.105\paperheight]current page.south west) --
+      ([xshift=0.90\paperwidth, yshift=0.105\paperheight]current page.south west);
+    \node[anchor=south west, text=InkBrown, inner sep=0pt]
+      at ([xshift=0.10\paperwidth, yshift=0.062\paperheight]current page.south west)
+      {\kaishu\fontsize{14}{18}\selectfont\LT@author};
+    \node[anchor=south east, text=InkMuted, inner sep=0pt]
+      at ([xshift=-0.06\paperwidth, yshift=0.062\paperheight]current page.south east)
+      {\kaishu\fontsize{11}{14}\selectfont\LT@publisher};
+
+    % --- 底部三色横带 ---
+    \LT@TriBand
+  }%
 }
 
-% ---------------- 封面本体 ----------------
-\newcommand{\makecover}{%
-	\clearpage
-	\thispagestyle{empty}
-	\newgeometry{top=0pt, bottom=0pt, left=0pt, right=0pt}
-	\defaultfontfeatures{LetterSpace=0, LetterSpaceLimit=-200}
-	\begin{tikzpicture}[remember picture, overlay]
-		\node[anchor=north west, inner sep=0pt, outer sep=0pt] at (current page.north west) {
-			\resizebox{\paperwidth}{\paperheight}{\includegraphics{assets/pdf/cover_bg.pdf}}
-		};
-
-		% ---- 标题 ----
-		\node[
-		anchor=north west,
-		minimum width=280pt,
-		minimum height=100pt,
-		text width=280pt,
-		inner sep=0pt,
-		outer sep=0pt,
-		align=left,
-		] at ($(current page.north west) + (10.096cm,-5.4467cm)$) {\TitleText};
-
-		% ---- 作者（标题右下） ----
-		\node[
-		anchor=north west,
-		minimum width=110pt,
-		minimum height=12pt,
-		text width=110pt,
-		inner sep=0pt,
-		outer sep=0pt,
-		align=center,
-		] at ($(current page.north west) + (16.1444cm,-10.4991cm)$) {\AuthorText};
-
-		% ---- 课程 / 姓名 / 学号 / 日期（页面中下方） ----
-		\node[
-		anchor=north west,
-		inner sep=0pt,
-		outer sep=0pt,
-		align=left,
-		] at ($(current page.north west) + (5.9cm,-18.6cm)$) {\InfoTable};
-
-		% ---- 参考文献 / 致谢（左下角） ----
-		\node[
-		anchor=south west,
-		minimum width=199pt,
-		minimum height=11.8577pt,
-		text width=199pt,
-		inner sep=0pt,
-		outer sep=0pt,
-		align=left,
-		] at ($(current page.north west) + (5.5611 cm,-27.6346cm)$) {\ReferenceText};
-	\end{tikzpicture}
-
-	\restoregeometry
-	\clearpage
+% ============================================================================
+%  扉页（环衬后）：丛书名 + 书名，安静地落在右页上
+% ============================================================================
+\newcommand{\HalfTitle}{%
+  \LT@FullPage{%
+    \fill[PaperIvory] (current page.south west) rectangle (current page.north east);
+    \node[anchor=north west, text=InkMuted, inner sep=0pt]
+      at ([xshift=0.13\paperwidth, yshift=-0.16\paperheight]current page.north west)
+      {\kaishu\fontsize{12}{16}\selectfont\LT@series};
+    \node[anchor=north west, text=InkBrown, inner sep=0pt,
+          text width=0.70\paperwidth, align=left]
+      at ([xshift=0.13\paperwidth, yshift=-0.44\paperheight]current page.north west)
+      {\songti\bfseries\fontsize{30}{38}\selectfont\LT@title};
+    \node[anchor=north west, text=InkMuted, inner sep=0pt]
+      at ([xshift=0.13\paperwidth, yshift=-0.56\paperheight]current page.north west)
+      {\itshape\fontsize{12}{16}\selectfont\LT@subtitle};
+    \draw[structurecolor, line width=1.1pt]
+      ([xshift=0.13\paperwidth, yshift=-0.60\paperheight]current page.north west) --
+      ++(0.10\paperwidth,0);
+    \node[anchor=south west, text=InkMuted, inner sep=0pt]
+      at ([xshift=0.13\paperwidth, yshift=0.07\paperheight]current page.south west)
+      {\kaishu\fontsize{10}{13}\selectfont\LT@publisher};
+  }%
 }
 
-% ---------------- 显示开关 ----------------
-% 在 main.tex 中注释掉 \DisplayCover / \DisplayTOC 即可隐藏对应页面
-\newcommand{\DisplayCover}{\makecover}
-\newcommand{\DisplayTOC}{%
-	\clearpage
-	\LoneInTOCtrue
-	\newgeometry{left=2.1cm,right=0.95cm,top=5.8cm,bottom=2cm}%
-	\makecustomtoc
-	\clearpage
-	\restoregeometry
-	\LoneInTOCfalse
+% ============================================================================
+%  版权页：出版形制必备，取代原模板的「学生 / 学号」块
+% ============================================================================
+\newcommand{\Imprint}{%
+  \LT@FullPage{%
+    \fill[PaperIvory] (current page.south west) rectangle (current page.north east);
+    \node[anchor=north west, text=InkMuted, inner sep=0pt,
+          text width=0.62\paperwidth, align=left]
+      at ([xshift=0.13\paperwidth, yshift=-0.14\paperheight]current page.north west)
+      {%
+        {\kaishu\fontsize{11}{19}\selectfont
+          \textbf{\LT@title}\par
+          \ifdefempty{\LT@subtitle}{}{\LT@subtitle\par}
+          \vspace{1.2em}%
+          \LT@author\par
+          \vspace{2.2em}%
+          \ifdefempty{\LT@isbn}{}{书号：\LT@isbn\par}
+          \ifdefempty{\LT@edition}{}{版次：\LT@edition\par}
+          出版：\LT@publisher\par
+          \vspace{2.2em}%
+          \textcopyright\ \the\year\ \LT@author\par
+          保留所有权利。未经书面许可，不得以任何形式复制、转载或倒卖本书。\par
+          \vspace{1.2em}%
+          本书为书稿版本，内容与版式可能在作者后续修订中调整。\par
+        }%
+      };
+    \node[anchor=south east, text=InkMuted, inner sep=0pt]
+      at ([xshift=-0.075\paperwidth, yshift=0.06\paperheight]current page.south east)
+      {\LoneDisplay\fontsize{9}{11}\selectfont Lone Trail Book Template};
+  }%
+}
+
+% ============================================================================
+%  封底：内容简介 + 分卷列表 + 出版标 + 条码位
+% ============================================================================
+\newcommand{\BackCover}{%
+  \LT@FullPage{%
+    \fill[PaperIvory] (current page.south west) rectangle (current page.north east);
+    \node[anchor=center, opacity=0.05, text=InkBrown]
+      at ([xshift=0.05\paperwidth, yshift=0.2\paperheight]current page.center)
+      {\resizebox{!}{0.34\paperheight}{\LT@watermark}};
+
+    \node[anchor=north west, text=InkBrown, inner sep=0pt,
+          text width=0.62\paperwidth, align=left]
+      at ([xshift=0.10\paperwidth, yshift=-0.12\paperheight]current page.north west)
+      {%
+        {\kaishu\bfseries\fontsize{16}{21}\selectfont 内容简介}\\[5mm]
+        {\kaishu\fontsize{11.5}{19}\selectfont\color{InkMuted}%
+          \LT@blurb
+          \ifdefempty{\LT@shelflist}{}{\par\vspace{6mm}\LT@shelflist}}%
+      };
+
+    % 出版标 + 条码占位
+    \node[anchor=south west, text=InkBrown, inner sep=0pt]
+      at ([xshift=0.10\paperwidth, yshift=0.075\paperheight]current page.south west)
+      {\kaishu\fontsize{13}{17}\selectfont\LT@publisher};
+    \node[anchor=south east, text=InkMuted, inner sep=0pt]
+      at ([xshift=-0.06\paperwidth, yshift=0.075\paperheight]current page.south east)
+      {\kaishu\fontsize{10}{13}\selectfont\ifdefempty{\LT@isbn}{}{\LT@isbn}};
+
+    \LT@TriBand
+  }%
+}
+
+% ============================================================================
+%  卷隔页（多卷合订本）
+%  槽位宏：书籍工程覆写下列三个，即可换上自己的卷次数据（不改本文件）。
+%    \LoneVolumeTitle{N}  卷次大标题（如「第一卷 · 基础语言」）
+%    \LoneVolumeBlurb{N}  卷次导语
+%    \LoneVolumeMark{N}   右上角卷标（默认「第N卷」）
+% ============================================================================
+\newcommand{\LoneVolumeTitle}[1]{}
+\newcommand{\LoneVolumeBlurb}[1]{}
+\newcommand{\LoneVolumeMark}[1]{第#1卷}
+
+\newcommand{\VolumeDivider}[1]{% #1 = 卷号
+  \LT@FullPage{%
+    \fill[PaperIvory] (current page.south west) rectangle (current page.north east);
+    \node[anchor=center, opacity=0.05, text=InkBrown]
+      at ([xshift=0.08\paperwidth, yshift=0.14\paperheight]current page.center)
+      {\resizebox{!}{0.26\paperheight}{\LT@watermark}};
+    \LT@HairFrame
+    % 顶部：丛书行（左）+ 卷标（右），文字完整坐在横线之上
+    \draw[InkBrown, line width=0.9pt]
+      ([xshift=0.10\paperwidth, yshift=-0.085\paperheight]current page.north west) --
+      ([xshift=0.90\paperwidth, yshift=-0.085\paperheight]current page.north east);
+    \node[anchor=north west, text=InkMuted, inner sep=0pt]
+      at ([xshift=0.10\paperwidth, yshift=-0.060\paperheight]current page.north west)
+      {\kaishu\fontsize{11}{14}\selectfont\LT@series};
+    \node[anchor=north east, text=InkMuted, inner sep=0pt]
+      at ([xshift=-0.075\paperwidth, yshift=-0.060\paperheight]current page.north east)
+      {\kaishu\fontsize{9.5}{12}\selectfont\LoneVolumeMark{#1}};
+    % 卷次大标题 + 导语
+    \node[anchor=north west, text=InkBrown, inner sep=0pt,
+          text width=0.66\paperwidth, align=left]
+      at ([xshift=0.10\paperwidth, yshift=-0.34\paperheight]current page.north west)
+      {\songti\bfseries\fontsize{30}{38}\selectfont\LoneVolumeTitle{#1}};
+    \draw[InkBrown, line width=1.15pt]
+      ([xshift=0.10\paperwidth, yshift=-0.45\paperheight]current page.north west) --
+      ++(0.14\paperwidth,0);
+    \node[anchor=north west, text=InkBrown, inner sep=0pt,
+          text width=0.66\paperwidth, align=left]
+      at ([xshift=0.10\paperwidth, yshift=-0.50\paperheight]current page.north west)
+      {\kaishu\fontsize{12}{20}\selectfont\LoneVolumeBlurb{#1}};
+  }%
+}
+
+% ============================================================================
+%  章扉页：正文每章前的整页
+%  书籍工程可覆写下列槽位宏，不改本文件即得到自己的章节数据。
+% ============================================================================
+\newcommand{\LonePlateSymbol}[1]{$\cdot$}
+\newcommand{\LonePlatePartCN}[1]{}
+\newcommand{\LonePlateQuote}[1]{}
+\newcommand{\LonePlateQuoteBy}[1]{}
+\newcommand{\LonePlateImage}[1]{}   % 返回图片路径，空则不放
+
+\newcommand{\ChapterPlate}[2]{% #1 = 章号 #2 = 章名
+  \LT@FullPage{%
+    \fill[PaperIvory] (current page.south west) rectangle (current page.north east);
+
+    % 右半幅可放数学家肖像（书籍工程提供）
+    \edef\LT@plateimg{\LonePlateImage{#1}}%
+    \ifdefempty{\LT@plateimg}{}{%
+      \IfFileExists{\LT@plateimg}{%
+        \begin{scope}[opacity=0.15]
+          \node[anchor=south east, inner sep=0pt]
+            at ([xshift=-0.02\paperwidth, yshift=0.07\paperheight]current page.south east)
+            {\includegraphics[height=0.60\paperheight,keepaspectratio]{\LT@plateimg}};
+        \end{scope}%
+        % 左淡洗，保证标题可读
+        \fill[PaperIvory, opacity=0.55]
+          (current page.south west) rectangle
+          ([xshift=0.50\paperwidth]current page.north west);
+        \fill[PaperIvory, opacity=0.30]
+          ([xshift=0.50\paperwidth]current page.south west) rectangle
+          ([xshift=0.64\paperwidth]current page.north west);
+      }{}%
+    }%
+
+    % 数学母题水印
+    \node[anchor=center, opacity=0.06, text=InkMuted]
+      at ([xshift=0.07\paperwidth, yshift=0.14\paperheight]current page.center)
+      {\resizebox{!}{0.30\paperheight}{\LonePlateSymbol{#1}}};
+
+    \LT@HairFrame
+
+    % 顶部：丛书行 + 篇名（文字完整坐在横线之上）
+    \draw[InkBrown, line width=0.9pt]
+      ([xshift=0.10\paperwidth, yshift=-0.085\paperheight]current page.north west) --
+      ([xshift=0.90\paperwidth, yshift=-0.085\paperheight]current page.north east);
+    \node[anchor=north west, text=InkMuted, inner sep=0pt]
+      at ([xshift=0.10\paperwidth, yshift=-0.060\paperheight]current page.north west)
+      {\kaishu\fontsize{11}{14}\selectfont\LT@series};
+    \node[anchor=north east, text=InkMuted, inner sep=0pt]
+      at ([xshift=-0.075\paperwidth, yshift=-0.060\paperheight]current page.north east)
+      {\kaishu\fontsize{9.5}{12}\selectfont\LonePlatePartCN{#1}};
+
+    % 章号 + 章名
+    \node[anchor=north west, text=InkMuted, inner sep=0pt]
+      at ([xshift=0.10\paperwidth, yshift=-0.32\paperheight]current page.north west)
+      {\kaishu\fontsize{14}{18}\selectfont 第\,#1\,章};
+    \node[anchor=north west, text=InkBrown, inner sep=0pt,
+          text width=0.66\paperwidth, align=left]
+      at ([xshift=0.10\paperwidth, yshift=-0.37\paperheight]current page.north west)
+      {\songti\bfseries\fontsize{30}{38}\selectfont #2};
+    \draw[InkBrown, line width=1.15pt]
+      ([xshift=0.10\paperwidth, yshift=-0.48\paperheight]current page.north west) --
+      ++(0.14\paperwidth,0);
+
+    % 题记
+    \ifdefempty{\LonePlateQuote{#1}}{}{%
+      \node[anchor=north west, text=InkBrown, inner sep=0pt,
+            text width=0.62\paperwidth, align=left]
+        at ([xshift=0.10\paperwidth, yshift=-0.54\paperheight]current page.north west)
+        {%
+          \begin{minipage}{0.62\paperwidth}
+            {\kaishu\fontsize{12.5}{20}\selectfont
+              「\,\LonePlateQuote{#1}\,」}\\[0.4cm]
+            {\kaishu\fontsize{10}{13}\selectfont\color{InkMuted}
+              --- \LonePlateQuoteBy{#1}}
+          \end{minipage}%
+        };
+    }%
+
+    \draw[InkMuted, line width=0.55pt, opacity=0.65]
+      ([xshift=0.10\paperwidth, yshift=0.055\paperheight]current page.south west) --
+      ([xshift=0.90\paperwidth, yshift=0.055\paperheight]current page.south west);
+  }%
 }

@@ -1,81 +1,56 @@
-\newif\ifLoneInTOC
-\LoneInTOCfalse
+% ============================================================================
+%  styles/contents.tex — 目录版式（书籍形制）
+%  原模板是 A4 双栏目录；书籍出版物用单栏、章行带主题色短线的目录。
+%
+%  实现要点：
+%   1. \numberline 用 \@tempdima 作标签槽宽，平时由 \@dottedtocline 设置。
+%      自定义 \l@chapter / \l@section 接手后必须自己给 \@tempdima 赋值。
+%   2. 不能用 minipage 排版目录行 —— minipage 内部会把 \@tempdima 当作自己的
+%      版心宽来用，把上面的槽宽赋值覆盖掉，标签槽变成整行宽，标题整段丢失。
+%      这里改用 book 类原生手法：\hangindent + \rightskip + \parfillskip，
+%      页码用 \hfill 推到右端，与 \@dottedtocline 同源，稳。
+%   3. styles/*.tex 由 lonetrailbook.cls 读入，此时 @ 已是 letter，不需要
+%      \makeatletter / \makeatother —— 尾部的 \makeatother 会污染后续读入的文件。
+% ============================================================================
 
-\AddToHook{shipout/background}{%
-	\ifLoneInTOC
-		\begin{tikzpicture}[remember picture, overlay]
-			\node[anchor=north west, inner sep=0pt, outer sep=0pt] at (current page.north west) {
-				\resizebox{\paperwidth}{\paperheight}{\includegraphics{assets/pdf/contents_bg.pdf}}
-			};
-		\end{tikzpicture}%
-	\fi
+\renewcommand{\contentsname}{目录}
+\setcounter{tocdepth}{2}   % 章 + 节
+
+% 页码槽宽度（不用 \@pnumwidth，避免与 book 类内部赋值互相覆盖）
+\newlength{\LT@pnumw}
+\setlength{\LT@pnumw}{2.6em}
+
+% --- 章行：章名 + 页码 + 主题色短线 ----------------------------------------
+\renewcommand*\l@chapter[2]{%
+  \par\addvspace{12pt}%
+  \begingroup
+    \setlength{\@tempdima}{2.8em}%   % \numberline 的章号槽宽
+    \noindent
+    \hangindent\@tempdima
+    \hangafter=1
+    \rightskip\LT@pnumw
+    \parfillskip-\LT@pnumw
+    {\bfseries\color{InkBrown}\fontsize{13}{19}\selectfont
+      #1\hfill\hb@xt@\LT@pnumw{\hss\bfseries\color{InkBrown}%
+        \fontsize{12}{16}\selectfont #2}}\par
+  \endgroup
+  \nointerlineskip
+  \vspace{2.5pt}%
+  \noindent{\color{structurecolor}\rule{\linewidth}{0.9pt}}\par
 }
 
-\renewcommand{\sectionmark}[1]{\markboth{#1}{}}
-\renewcommand{\subsectionmark}[1]{\markright{#1}}
-\renewcommand{\contentsname}{}
-\setlength{\cftbeforetoctitleskip}{0pt}
-\setlength{\cftaftertoctitleskip}{0pt}
-\setcounter{secnumdepth}{0}
-\renewcommand{\cftdot}{}
-
-% ---------------- 默认目录间距参数（如未在 main.tex 中定义则采用以下默认值） ----------------
-\providecommand{\TOCSecSepSpace}{4.0pt}    % 1. 大标题与下方彩色短横线间距
-\providecommand{\TOCSubInnerSpace}{13.0pt} % 2. 小标题内部折行间距
-\providecommand{\TOCSubItemSpace}{8.5pt}   % 3. 小标题与小标题之间的间距
-
-\makeatletter
-\newlength{\TOCPageNumW}
-\setlength{\TOCPageNumW}{24pt}
-
-\renewcommand{\l@section}[2]{%
-	\vspace{16pt}%
-	\par\noindent
-	\begin{minipage}[t]{\dimexpr\linewidth-\TOCPageNumW\relax}%
-		\raggedright
-		\setlength{\lineskiplimit}{-10pt}%
-		\setlength{\lineskip}{0pt}%
-		{\cftsecfont\ignorespaces#1\par}%
-	\end{minipage}%
-	\hfill
-	\makebox[\TOCPageNumW][r]{{\cftsecpagefont\ignorespaces#2}}%
-	\par\nointerlineskip
-	\vspace{\TOCSecSepSpace}%
-	\noindent
-	\raggedright
-	\resizebox{200.5pt}{4pt}{\includegraphics{assets/pdf/separator_1.pdf}}%
-	\par
-	\vspace{6.0pt}%
+% --- 节行：悬挂缩进，安静，无线 --------------------------------------------
+\renewcommand*\l@section[2]{%
+  \par\addvspace{2.5pt}%
+  \begingroup
+    \setlength{\@tempdima}{3.4em}%   % \numberline 的节号槽宽
+    \noindent
+    \hangindent\@tempdima
+    \hangafter=1
+    \rightskip\LT@pnumw
+    \parfillskip-\LT@pnumw
+    {\color{InkBrown}\fontsize{10.5}{15}\selectfont
+      #1\hfill\hb@xt@\LT@pnumw{\hss\color{InkMuted}%
+        \fontsize{10.5}{15}\selectfont #2}}\par
+  \endgroup
 }
-
-\renewcommand{\l@subsection}[2]{%
-	\par\noindent
-	\begin{minipage}[t]{\dimexpr\linewidth-\TOCPageNumW\relax}%
-		\raggedright
-		{\cftsubsecfont\ignorespaces#1\par}%
-	\end{minipage}%
-	\hfill
-	\makebox[\TOCPageNumW][r]{{\cftsubsecpagefont\ignorespaces#2}}%
-	\par\nointerlineskip
-	\vspace{\TOCSubItemSpace}%
-}
-\makeatother
-
-% 原版思源黑体 CJK 定义（大标题 C 档 13.5pt，小标题由 \TOCSubInnerSpace 控制）
-\setCJKfamilyfont{SiYuanTOC}[Path = ./assets/fonts/, Extension = .otf]{SiYuan}
-\renewcommand{\cftsecfont}{\CJKfamily{SiYuanTOC}\SiYuan\CJKsetecglue{}\fontsize{16pt}{13.5pt}\selectfont\bfseries}
-\renewcommand{\cftsecpagefont}{\CJKfamily{SiYuanTOC}\SiYuan\CJKsetecglue{}\fontsize{16pt}{13.5pt}\selectfont\bfseries}
-\renewcommand{\cftsubsecfont}{\CJKfamily{SiYuanTOC}\SiYuan\CJKsetecglue{}\fontsize{12pt}{\TOCSubInnerSpace}\linespread{1.0}\selectfont\bfseries}
-\renewcommand{\cftsubsecpagefont}{\CJKfamily{SiYuanTOC}\SiYuan\CJKsetecglue{}\fontsize{12pt}{\TOCSubInnerSpace}\selectfont\bfseries}
-
-\newcommand{\makecustomtoc}{%
-	\pagenumbering{gobble}%
-	\pagestyle{empty}%
-	\begin{adjustwidth}{100pt}{0pt}
-		\begin{multicols*}{2}
-			\tableofcontents
-		\end{multicols*}
-	\end{adjustwidth}
-}
-
-\hypersetup{linktoc=all}

@@ -1,63 +1,115 @@
-% !TeX program = xelatex
+%!TEX TS-program = xelatex
+%!TEX encoding = UTF-8
 % ==============================================================================
-%  可切换配色 · 明日方舟·孤星 LaTeX 笔记模板
-%  目录：styles/ 版式 | chapters/ 正文 | assets/ 素材 | palettes/ 配色
+%  可切换配色 · 书籍出版物模板（明日方舟·孤星 · Lonetrail Book Template）
+%
+%  演示一本完整出版物的骨架：封面 → 扉页 → 版权页 → 目录 → 正文 → 封底。
+%  目录：styles/ 版式与家具 | chapters/ 正文 | palettes/ 配色 | tools/ 编译换肤
+%
+%  换肤只改 documentclass 的 theme=NNN，或运行：
+%      python tools/lonetrail.py theme 042
 % ==============================================================================
-\documentclass[11pt,a4paper,UTF8]{ctexart}
+\documentclass[
+  trim=185x260,
+  theme=000,
+  bg=grid,
+  fontsize=10pt
+]{lonetrailbook}
 
-% ---------------- 版式与配色 ----------------
-\input{styles/settings.tex}      % 宏包、字体、标题、页眉页脚
-\input{palettes/themes.tex}      % 主题配色总控（套数见文件内 % Theme: 行）
-\SelectTheme{135}                % ← 换肤只改这个数字，范围随 themes.tex 变化
-\input{styles/boxes.tex}         % 标题盒、数学盒子、自定义命令
-\input{styles/cover.tex}        % 封面版式（\DisplayCover）
+% ============================================================================
+% 封面 / 扉页 / 版权页 / 封底 信息（只改这里）
+% ============================================================================
+\title{测度论讲义}
+\subtitle{Lecture Notes on Measure Theory}
+\seriesname{明日方舟 · 孤星学术丛书}
+\author{莱茵实验室}
+\publisher{Rhine Lab Pioneer Project}
+\isbn{978-7-0000-0000-0}
+\edition{2026 年 10 月第 1 版}
+\volumeline{第一卷 · 可测空间}
+\volumelineEN{Volume I · Measurable Spaces}
+\coverline{$\displaystyle\int_X f\,\mathrm{d}\mu$}
+\watermark{$\displaystyle\int$}
+\blurb{%
+  本书以可测空间为起点，逐步建立外测度、Carathéodory 扩张与 Lebesgue 积分，
+  再进入乘积空间、符号测度与 $L^p$ 空间.全书定理、定义、例题六色编码，
+  读者扫一眼即可分辨环境类型；配色可一键切换，正文与封面同步换肤.}
 
-% ---------------- 目录排版间距测试（修改数值直接生效） ----------------
-\newcommand{\TOCSecSepSpace}{4.0pt}    % [间距1] 大标题与下方彩色短横线间距
-\newcommand{\TOCSubInnerSpace}{13.0pt} % [间距2] 小标题内部折行间距（文字跨行内部行距）
-\newcommand{\TOCSubItemSpace}{8.5pt}   % [间距3] 小标题条目之间的间距
-\input{styles/contents.tex}      % 目录版式（\DisplayTOC）
+% 页眉丛书行 / 页脚注脚行（留空即不显示）
+\renewcommand{\LoneSeriesMark}{孤星学术丛书 · 测度论讲义}
+\renewcommand{\LoneFootnoteLine}{\kaishu 明日方舟 · 孤星 LaTeX 书籍出版物模板}
 
+% ============================================================================
+% 章扉页槽位：按章号给数学母题、篇名与题记（可覆写）
+% ============================================================================
+\renewcommand{\LonePlateSymbol}[1]{%
+  \ifcase#1\relax $\cdot$%
+  \or $\mathcal{A}$% 1 可测空间
+  \or $\mu$%        2 外测度
+  \else $\mu$%
+  \fi}
+\renewcommand{\LonePlatePartCN}[1]{%
+  \ifcase#1\relax 预备%
+  \or 可测空间%
+  \or 测度论基础%
+  \else 进阶%
+  \fi}
+\renewcommand{\LonePlateQuote}[1]{%
+  \ifcase#1\relax 数学是解释自然现象最可靠的语言.%
+  \or 集合论的全部困难，在于如何处理无穷.%
+  \or 测度论不过是为「大小」找到一个自洽的定义.%
+  \else 严格性是数学的良心.%
+  \fi}
+\renewcommand{\LonePlateQuoteBy}[1]{%
+  \ifcase#1\relax 欧拉%
+  \or 康托尔%
+  \or 勒贝格%
+  \else 外尔%
+  \fi}
 
-% ---------------- 封面信息（只改这里） ----------------
-\newcommand{\LoneTitleI}{Measure Theory}
-\newcommand{\LoneTitleII}{测度论}
-\newcommand{\LoneAuthor}{@Mikukawaii2}
+% 卷隔页槽位（多卷合订本用；本 demo 演示一次）
+\renewcommand{\LoneVolumeTitle}[1]{第一卷 · 可测空间}
+\renewcommand{\LoneVolumeBlurb}[1]{%
+  本书以可测空间为起点，逐步建立外测度、Carathéodory 扩张与 Lebesgue 积分.}
 
-% 课程信息（显示在封面中下方）
-\newcommand{\LoneCourseI}{课程名称}
-\newcommand{\LoneCourseII}{Measure Theory}
-
-% 学生姓名与学号（显示在封面信息表）
-\newcommand{\LoneStudentName}{pulala}
-\newcommand{\LoneStudentID}{0123456789}
-
-% 日期（显示在封面信息表最后一行）
-\newcommand{\LoneDate}{\today}
-
-% 参考文献（封面左下角，最多三条）
-\newcommand{\LoneRefA}{1.Jech."Set Theory".3rd ed,Springer,2003}
-\newcommand{\LoneRefB}{2.Kechris."Classical Descriptive Set Theory".Springer,1995}
-\newcommand{\LoneRefC}{3.Engelking."General Topology".Heldermann Veriag,1989}
-\newcommand{\LoneAcknowledgements}{\#.Rhine Lab Pioneer Project}
-
-% ==============================================================================
+% ============================================================================
 \begin{document}
 
-% ---------------- 1. 封面（注释掉下一行即不显示封面） ----------------
-\pagestyle{empty}
-\DisplayCover
+\maketitle
+\frontmatter
 
-% ---------------- 2. 目录（注释掉下一行即不显示目录） ----------------
-\DisplayTOC
+\tableofcontents
+\clearpage
+{\thispagestyle{empty}
+\begin{center}\vspace*{\fill}
+{\kaishu\fontsize{13}{22}\selectfont\color{InkMuted}
+  本书为书稿版本，内容与版式可能在作者后续修订中调整.\\[1em]
+  未经书面许可，不得以任何形式复制、转载或倒卖.}
+\vspace*{\fill}\end{center}
+\clearpage}
 
-% ---------------- 3. 正文 ----------------
-\pagenumbering{arabic}
-\setcounter{page}{1}
-\pagestyle{empty}
+\mainmatter
 
-\DrawLoneTrailBackground
+\VolumeDivider{1}
 
-\input{chapters/chapter1.tex}
+\include{chapters/ch01}
+\include{chapters/ch02}
+
+\backmatter
+
+\chapter*{术语索引}
+\addcontentsline{toc}{chapter}{术语索引}
+\vspace{1em}
+\begin{multicols}{2}\footnotesize
+\begin{description}[leftmargin=1.4em,style=nextline]
+  \item[$\sigma$-代数] 对补与可数并封闭的集族.
+  \item[可测函数] 原像保持可测性的函数.
+  \item[Carathéodory 条件] 用外测度判别集可测的判据.
+  \item[Lebesgue 积分] 先简单函数后取极限的积分构造.
+  \item[$L^p$ 空间] $p$ 次幂可积函数构成的赋范空间.
+\end{description}
+\end{multicols}
+
+\BackCover
 
 \end{document}

@@ -1,0 +1,55 @@
+% 外测度与 Carathéodory 扩张
+\section{外测度}
+
+\begin{wenxintishi}[阅读顺序]
+外测度是「允许 ∞ 的长度」，只在可数并上满足次可加. 它比测度弱，因而容易构造；
+后面再用 Carathéodory 条件把它裁成一个真正的测度.
+\end{wenxintishi}
+
+\begin{definition}[外测度]
+设 $\mu^{*}:\mathcal{P}(X)\to[0,\infty]$ 满足 $\mu^{*}(\varnothing)=0$ 且对任意
+$A\subseteq\bigcup_{n}E_n$ 有 $\mu^{*}(A)\le\sum_n\mu^{*}(E_n)$，则称 $\mu^{*}$
+为 $X$ 上的外测度.
+\end{definition}
+
+\begin{lemma}[单调性]
+外测度单调：若 $A\subseteq B$，则 $\mu^{*}(A)\le\mu^{*}(B)$.
+\end{lemma}
+\begin{proof}
+$B\subseteq B\cup\varnothing\cup\varnothing\cup\cdots$，取 $E_1=B$、其余为空集即可.
+\end{proof}
+
+\section{Carathéodory 条件}
+
+\begin{theorem}[Carathéodory 判别]
+设 $\mu^{*}$ 为 $X$ 上的外测度，令
+\[
+\mathcal{M}=\{E\subseteq X:\forall\,A\subseteq X,\ \mu^{*}(A)=\mu^{*}(A\cap E)+\mu^{*}(A\setminus E)\}.
+\]
+则 $\mathcal{M}$ 是 $\sigma$-代数，且 $\mu^{*}\!|_{\mathcal{M}}$ 是测度.
+\end{theorem}
+
+\begin{proposition}[平移不变的外测度]
+在 $\mathbb{R}$ 上由区间长度生成的外测度满足 $\mu^{*}(E+t)=\mu^{*}(E)$.
+\end{proposition}
+
+\begin{corollary}
+Lebesgue 测度完备，且所有 Borel 集都可测.
+\end{corollary}
+
+\section{例题与练习}
+
+\begin{example}[构造外测度]
+设 $X=\mathbb{N}$，$\mu^{*}(A)=\sum_{n\in A}2^{-n}$. 验证 $\mu^{*}$ 是外测度，
+并求出 $\mu^{*}(\mathbb{N})$.
+\end{example}
+\begin{solution}
+空集对应零和；次可加性由非负项重排不变得到. 而
+$\mu^{*}(\mathbb{N})=\sum_{n=1}^{\infty}2^{-n}=1$.
+\end{solution}
+
+\begin{Exercises}
+  \item 证明有限集的外测度为零.
+  \item 举出 $\mathbb{R}$ 的一个不可测子集存在的论证思路.
+  \item 设 $\mu^{*}(E)<\infty$ 且 $E\in\mathcal{M}$，求 $\mu^{*}(E^{c})$.
+\end{Exercises}

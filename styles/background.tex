@@ -1,0 +1,71 @@
+% ============================================================================
+%  styles/background.tex — 页面背景
+%  随纸张尺寸自适应的实时 TikZ，不依赖预渲染素材，因此换肤即时生效。
+%  物理书的页眉/页脚/页码由 fancyhdr 承担，这里只画纸面与四角色带母题，
+%  不再把「页眉深色条 + 页脚徽章」烘焙进背景（那是报告形制的产物）。
+% ============================================================================
+
+% --- 纸张底色：仅屏幕模式上淡米色，印刷模式保持白纸 ------------------------
+\ifLT@screen
+  \pagecolor{PaperIvory}
+\fi
+
+% --- 细网格：只在书口留白处可见的极淡呼吸感 --------------------------------
+% 网格间距按物理尺寸给定（20mm），不随 \paperwidth 缩放宽窄，
+% 保证不同开本下每格都是 2cm，视觉密度一致。
+\newlength{\LT@gridstep}
+\setlength{\LT@gridstep}{20mm}
+\newlength{\LT@mark}
+\newlength{\LT@sepx}
+\newlength{\LT@sepy}
+
+\newcommand{\LT@DrawGrid}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \draw[InkWash, line width=0.3pt, opacity=0.55]
+      ([xshift=0pt, yshift=0pt]current page.south west)
+      grid[step=\LT@gridstep]
+      (current page.north east);
+  \end{tikzpicture}%
+}
+
+% --- 三色条带母题：四角小色块，尺寸随纸张宽度等比例 -------------------------
+% lv/huang/hong 是主题里的标志三色；出版形制下只留角标，
+% 取代原模板里满铺的左竖条与页眉色带。
+% 尺寸用 TeX 尺寸算好再进 TikZ，不用 \pgfmathsetmacro —— pgfmath 的解析器
+% 不认 \paperwidth 这类 TeX 尺寸寄存器。
+\newcommand{\LT@DrawTriStripeCorners}{%
+  \setlength{\LT@mark}{0.018\paperwidth}%
+  \setlength{\LT@sepx}{0.006\paperwidth}%
+  \setlength{\LT@sepy}{0.009\paperheight}%
+  \begin{tikzpicture}[remember picture, overlay]
+    % 左上：横排
+    \fill[lv] ([xshift=\LT@sepx, yshift=-\LT@sepy]current page.north west)
+      rectangle ++(\LT@mark,\LT@mark);
+    \fill[huang] ([xshift=\dimexpr\LT@sepx+\LT@mark+\LT@sepx\relax,
+                   yshift=-\LT@sepy]current page.north west)
+      rectangle ++(\LT@mark,\LT@mark);
+    \fill[hong] ([xshift=\dimexpr\LT@sepx+2\LT@mark+2\LT@sepx\relax,
+                  yshift=-\LT@sepy]current page.north west)
+      rectangle ++(\LT@mark,\LT@mark);
+    % 右下：横排（书口外侧，不与页眉冲突）
+    \fill[hong] ([xshift=-\dimexpr\LT@sepx+\LT@mark\relax,
+                  yshift=\LT@sepy]current page.south east)
+      rectangle ++(\LT@mark,\LT@mark);
+    \fill[huang] ([xshift=-\dimexpr\LT@sepx+2\LT@mark+\LT@sepx\relax,
+                   yshift=\LT@sepy]current page.south east)
+      rectangle ++(\LT@mark,\LT@mark);
+    \fill[lv] ([xshift=-\dimexpr\LT@sepx+3\LT@mark+2\LT@sepx\relax,
+                yshift=\LT@sepy]current page.south east)
+      rectangle ++(\LT@mark,\LT@mark);
+  \end{tikzpicture}%
+}
+
+% --- 挂载 ----------------------------------------------------------------
+% 全出血页（封面/扉页/版权页/封底/卷隔页/章扉页）自带纸面与母题，
+% 跳过网格与角标，避免淡色网格压在米色封面上。
+\AddToHook{shipout/background}{%
+  \ifLT@fullbleedpage\else
+    \ifLT@cleangrid\else\LT@DrawGrid\fi
+    \LT@DrawTriStripeCorners
+  \fi
+}

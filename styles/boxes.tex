@@ -1,256 +1,542 @@
-% ==============================================================================
-%  styles/boxes.tex —— 标题盒、数学盒子、自定义命令
-%  由 main.tex 载入（须在 palettes/themes.tex 之后）
-% ==============================================================================
+% ============================================================================
+%  styles/boxes.tex — 学术环境（书籍形制）
+%
+%  与原模板的差别（书籍化改造的核心）：
+%    · 原版六大定理盒的标题栏是「莱茵生命 logo 戳 + 竖排中文 + 英文粗体」
+%      预渲染矢量图。那是游戏 IP 视觉，出版物不能带，因此这里改为
+%      「粗左线 + 彩色标签 + 编号 + 可选中注」的学术书籍形制，
+%      六色编码（定义 / 定理 / 命题 / 推论 / 引理 / 例题）完整保留 ——
+%      这才是孤星配色系统真正有价值的部分：读者扫一眼即可分辨环境类型。
+%    · 定理环境直接用 tcolorbox + 计数器实现，不再走 amsthm 环境二次包装，
+%      计数器形制仍为 \thechapter.\arabic{...}，\label / cleveref 行为不变。
+% ============================================================================
 
-% \AssetH{高度}{名}：标题盒左右饰条按固定高度缩放
-\newcommand{\AssetH}[2]{\includegraphics[height=#1]{assets/pdf/#2.pdf}}
+% amsthm 已定义 \proof；本类自定义 proof 环境，先解除占用（\let 为 \relax 后
+% xparse 视为未定义，可重新 \NewDocumentEnvironment）
+\let\proof\relax
+\let\endproof\relax
 
-% 通用盒子定义 ===============================================================
-\newlength{\textwd} % 自动计算文本长度
+% --- 中文环境名 -------------------------------------------------------------
+\providecommand{\definitionname}{定义}
+\providecommand{\theoremname}{定理}
+\providecommand{\propositionname}{命题}
+\providecommand{\corollaryname}{推论}
+\providecommand{\lemmaname}{引理}
+\providecommand{\axiomname}{公理}
+\providecommand{\postulatename}{公设}
+\providecommand{\propertyname}{性质}
+\providecommand{\examplename}{例题}
+\providecommand{\exercisename}{习题}
+\providecommand{\solutionname}{解}
+\providecommand{\remarkname}{注}
+\providecommand{\proofname}{证明}
 
-% 通用三栏标题盒命令1（左右图片 + 中间自适应文字）
-\newcommand{\TitleBoxI}[5]{%
-	\setlength{\textwd}{0pt}%
-	\sbox0{\fontsize{20}{22}\selectfont\SiYuan\XeTeXinterchartokenstate=0 #2}%
-	\setlength{\textwd}{\widthof{\usebox0}}%
-	\begin{tabular}[c]{@{}c@{}c@{}c@{}}
-		\raisebox{-\height + 12pt}{%
-			\AssetH{24pt}{#1}%
-		} &
-		\raisebox{-\height + 12pt}{%
-			\colorbox{#4}{%
-				\parbox[c][18pt][c]{\textwd}{%
-					\centering
-					\fontsize{18}{22}\selectfont\SiYuan\XeTeXinterchartokenstate=0\color{#5} #2%
-				}%
-			}%
-		} &
-		\raisebox{-\height + 12pt}{%
-			\AssetH{24pt}{#3}%
-		}
-	\end{tabular}%
-}
+% --- 计数器（各环境独立，按章编号；编号形制与 elegantbook 时代一致）---------
+\newcounter{ltdefinition}[chapter]
+\renewcommand{\theltdefinition}{\thechapter.\arabic{ltdefinition}}
+\newcounter{lttheorem}[chapter]
+\renewcommand{\thelttheorem}{\thechapter.\arabic{lttheorem}}
+\newcounter{ltproposition}[chapter]
+\renewcommand{\theltproposition}{\thechapter.\arabic{ltproposition}}
+\newcounter{ltcorollary}[chapter]
+\renewcommand{\theltcorollary}{\thechapter.\arabic{ltcorollary}}
+\newcounter{ltlemma}[chapter]
+\renewcommand{\theltlemma}{\thechapter.\arabic{ltlemma}}
+\newcounter{ltaxiom}[chapter]
+\renewcommand{\theltaxiom}{\thechapter.\arabic{ltaxiom}}
+\newcounter{ltproperty}[chapter]
+\renewcommand{\theltproperty}{\thechapter.\arabic{ltproperty}}
+\newcounter{ltexample}[chapter]
+\renewcommand{\theltexample}{\thechapter.\arabic{ltexample}}
+% 习题全章共用一个计数器（exercise / exercises / Exercises 连续编号）
+\newcounter{bookexercise}[chapter]
+\renewcommand{\thebookexercise}{\thechapter.\arabic{bookexercise}}
+\renewcommand{\theHbookexercise}{Exercise.\thechapter.\arabic{bookexercise}}
+% 注与题解收集
+\newcounter{ltremark}[chapter]
+\renewcommand{\theltremark}{\thechapter.\arabic{ltremark}}
+\newcounter{exsolcount}[chapter]
 
-% 通用三栏标题盒命令2（左右图片 + 中间自适应文字）
-\newcommand{\TitleBoxII}[5]{%
-	\setlength{\textwd}{0pt}%
-	\sbox0{\fontsize{16}{22}\selectfont\SiYuan\XeTeXinterchartokenstate=0 #2}%
-	\setlength{\textwd}{\widthof{\usebox0}}%
-	\begin{tabular}[c]{@{}c@{}c@{}c@{}}
-		\raisebox{-\height + 12pt}{%
-			\AssetH{24pt}{#1}%
-		} &
-		\raisebox{-\height + 12pt}{%
-			\colorbox{#4}{%
-				\parbox[c][18pt][c]{\textwd}{%
-					\centering
-					\fontsize{14}{22}\selectfont\SiYuan\XeTeXinterchartokenstate=0\color{#5} #2%
-					\vspace{-4pt}%
-				}%
-			}%
-		} &
-		\raisebox{-\height + 12pt}{%
-			\AssetH{24pt}{#3}%
-		}
-	\end{tabular}%
-}
-
-% 通用三栏标题盒命令3（左右图片 + 中间自适应文字）
-\newcommand{\TitleBoxIII}[5]{%
-	\setlength{\textwd}{0pt}%
-	\sbox0{\fontsize{22}{22}\selectfont\SiYuan\XeTeXinterchartokenstate=0 #2}%
-	\setlength{\textwd}{\widthof{\usebox0}}%
-	\begin{tabular}[c]{@{}c@{}c@{}c@{}}
-		\raisebox{-\height + 12pt}{%
-			\AssetH{24pt}{#1}%
-		} &
-		\raisebox{-\height + 12pt}{%
-			\colorbox{#4}{%
-				\parbox[c][18pt][c]{\textwd}{%
-					\centering
-					\fontsize{14}{22}\selectfont\SiYuan\XeTeXinterchartokenstate=0\color{#5} #2%
-					\vspace{0pt}%
-				}%
-			}%
-		} &
-		\raisebox{-\height + 12pt}{%
-			\AssetH{24pt}{#3}%
-		}
-	\end{tabular}%
-}
-
-% 通用三栏标题盒命令4（左右图片 + 中间自适应文字）
-\newcommand{\TitleBoxIV}[5]{%
-	\setlength{\textwd}{0pt}%
-	\sbox0{\fontsize{16}{22}\selectfont\SiYuan\XeTeXinterchartokenstate=0 #2}%
-	\setlength{\textwd}{\widthof{\usebox0}}%
-	\begin{tabular}[c]{@{}c@{}c@{}c@{}}
-		\raisebox{-\height + 12pt}{%
-			\AssetH{24pt}{#1}%
-		} &
-		\raisebox{-\height + 12pt}{%
-			\colorbox{#4}{%
-				\parbox[c][18pt][c]{\textwd}{%
-					\centering
-					\fontsize{14}{22}\selectfont\SiYuan\XeTeXinterchartokenstate=0\color{#5} #2%
-					\vspace{0pt}%
-				}%
-			}%
-		} &
-		\raisebox{-\height + 12pt}{%
-			\AssetH{24pt}{#3}%
-		}
-	\end{tabular}%
-}
-
-% 相关盒子定义 ============================================================
-% 1. 二级标题样式
-\titleformat{\subsection}
-{\raggedright}{}{0pt}{%
-	\TitleBoxI{box1_1}{#1}{box1_2}{mibai}{qiancheng}%
-	\vspace{8pt}%
-}
-
-% 2. 六大数学定理盒子（工厂宏统一定义，属性 100% 保持原样）
-\newcommand{\NewLoneMathBox}[2]{%
-	\newtcolorbox{#1}[1]{
-		enhanced,
-		sharp corners,
-		colback=qianbai,
-		colframe=#2,
-		boxrule=2.5pt,
-		fontupper={\kaishu},
-		halign=justify,
-		breakable,
-		title={\TitleBoxII{#2_1}{##1}{#2_2}{heise}{mibai}},
-		attach boxed title to top left={yshift=-2.5pt, xshift=0mm},
-		boxed title style={
-			boxrule=0pt,
-			boxsep=0pt,
-			top=-2.1pt,
-			bottom=0pt,
-			left=0pt,
-			right=0pt,
-			colback=qianbai,
-			baseline=\ht\strutbox
-		},
-		after upper={\hfill\includegraphics[height=8pt]{assets/pdf/mark_#2.pdf}},
-	}%
-}
-\NewLoneMathBox{definition}{definition}
-\NewLoneMathBox{theorem}{theorem}
-\NewLoneMathBox{proposition}{proposition}
-\NewLoneMathBox{corollary}{corollary}
-\NewLoneMathBox{lemma}{lemma}
-\NewLoneMathBox{example}{example}
-
-% 3. 习题与问题盒子
-\newcommand{\NewLoneExerciseBox}[2]{%
-	\newtcolorbox{#1}[1]{
-		enhanced,
-		sharp corners,
-		colback=qianbai,
-		colframe=qiancheng,
-		boxrule=2.5pt,
-		fontupper={\kaishu},
-		halign=justify,
-		breakable,
-		title={\TitleBoxII{exercise_1}{##1}{#2}{mibai}{qiancheng}},
-		attach boxed title to top left={yshift=0pt, xshift=0mm},
-		boxed title style={
-			boxrule=0pt,
-			boxsep=0pt,
-			top=-2.1pt,
-			bottom=0pt,
-			left=0pt,
-			right=0pt,
-			colback=qianbai,
-			baseline=\ht\strutbox
-		},
-	}%
-}
-\NewLoneExerciseBox{exercise}{exercise_2}
-\NewLoneExerciseBox{question}{question_2}
-
-% 4. 证明与点评盒子
-\newcommand{\NewLoneRemarkBox}[2]{%
-	\newtcolorbox{#1}[1][]{
-		enhanced,
-		sharp corners,
-		colback=qianbai,
-		colframe=qiancheng,
-		fontupper={\kaishu},
-		halign=justify,
-		leftrule=5pt,
-		rightrule=0pt,
-		toprule=0pt,
-		bottomrule=0pt,
-		breakable,
-		before upper={
-			\setstretch{1.5}\noindent
-			\textcolor{qiancheng}{\XeTeXinterchartokenstate=0\SiYuan\textbf{#2}}%
-		},
-		after upper={\hfill\textcolor{qiancheng}{$\blacksquare$}},
-		##1
-	}%
-}
-\NewLoneRemarkBox{prove}{证明：}
-\NewLoneRemarkBox{remark}{点评：}
-
-% 5. 通用编号盒子 box1 ~ box4
+% --- 盒子基样式 -------------------------------------------------------------
+% 印刷安全：底色为该定理色的极淡 tint（≤8%），不是大面积色块。
 \tcbset{
-	loneboxedtitle/.style={
-		enhanced,
-		sharp corners,
-		colback=qianbai,
-		colframe=qiancheng,
-		fontupper={\kaishu},
-		halign=justify,
-		boxrule=2pt,
-		breakable,
-		attach boxed title to top left={yshift=0pt, xshift=0mm},
-		boxed title style={
-			boxrule=0pt,
-			boxsep=0pt,
-			top=-2.1pt,
-			bottom=0pt,
-			left=0pt,
-			right=0pt,
-			colback=qianbai,
-			baseline=\ht\strutbox
-		},
-	}
+  ltbox/.style={
+    enhanced,
+    sharp corners,
+    breakable,
+    boxrule=0pt,
+    leftrule=3pt,
+    rightrule=0pt,
+    toprule=0pt,
+    bottomrule=0pt,
+    top=7pt,
+    bottom=7pt,
+    left=10pt,
+    right=10pt,
+    before skip=11pt,
+    after skip=11pt,
+    fontupper=\normalfont,
+    halign upper=justify
+  },
+  % 例题 / 解答 / 习题这类「内容盒」底色更淡，右侧留呼吸
+  ltcontent/.style={
+    ltbox,
+    leftrule=2.2pt,
+    top=6pt,
+    bottom=6pt,
+    before skip=9pt,
+    after skip=9pt
+  },
+  % 长注 / remark* 的静音盒（键名集中在这里定义，expl3 语境里空格会被吃掉，
+  % 不能直接在 \cs_new_protected 的体内写 `before skip=9pt` 这类带空格的键）
+  ltremarkbox/.style={
+    ltbox,
+    colframe=InkMuted,
+    colback=InkWash!55!white,
+    leftrule=5pt,
+    top=6pt,
+    bottom=6pt,
+    before skip=9pt,
+    after skip=9pt
+  }
 }
-\newtcolorbox{box1}[1]{loneboxedtitle, title={\TitleBoxIII{box1_1}{#1}{box1_2}{mibai}{qiancheng}}}
-\newtcolorbox{box2}[1]{loneboxedtitle, title={\TitleBoxIV{box2_1}{#1}{box2_2}{qiancheng}{mibai}}}
-\newtcolorbox{box3}[1]{loneboxedtitle, title={\TitleBoxIII{box3_1}{#1}{box3_2}{heise}{mibai}}}
-\newtcolorbox{box4}[1]{loneboxedtitle, title={\TitleBoxIV{box4_1}{#1}{box4_2}{mibai}{qiancheng}}}
 
-% 自定义其他命令 ===================================================
-% 1. 自定义分割线
-\newcommand{\LoneSep}{%
-	\par\vspace{-10pt}%
-	\noindent
-	\resizebox{\linewidth}{2pt}{\includegraphics{assets/pdf/separator_1.pdf}}%
-	\par\vspace{-4pt}%
+% --- 定理族环境 -------------------------------------------------------------
+% 各环境形制一致：粗左线（该定理色）+ 极淡 tint 底 + 彩色标签行。
+% 编号用 \refstepcounter，\label / cleveref 形制与 elegantbook 时代一致。
+\NewDocumentEnvironment{definition}{o}{%
+  \refstepcounter{ltdefinition}%
+  \LT@FloatLocal
+  \begin{tcolorbox}[ltbox, colframe=definition, colback=definition!7!white]
+    \noindent{\bfseries\color{definition}\definitionname~\theltdefinition
+      \IfValueT{#1}{\ （#1）}}\par\nobreak\smallskip
+    \ignorespaces
+}{%
+  \end{tcolorbox}%
 }
-\newcommand{\Ark}{\LoneSep}% 向后兼容原有 \Ark 缩写命令
 
-% 2. 自定义文字居中
-\newcommand{\LoneCenter}[1]{\makebox[\linewidth][c]{#1}}
-\providecommand{\C}[1]{\LoneCenter{#1}}% 向后兼容，如未占用则提供
-
-% 3. 自定义增加间隔
-\newcommand{\LoneSpace}{\vspace{4pt}}
-\newcommand{\Q}{\LoneSpace}% 向后兼容
-
-% 4. 自定义添加文本背景
-\newcommand{\LoneHighlight}[1]{%
-	\tikz[baseline=(char.base)]{%
-		\node[inner sep=0pt, outer sep=0pt] (char) {\phantom{#1}};%
-		\fill[qiancheng] (char.south west) rectangle ([xshift=0pt, yshift=1.5pt]char.south east);%
-		\node[inner sep=0pt, outer sep=0pt] (char) {#1};%
-	}%
+\NewDocumentEnvironment{theorem}{o}{%
+  \refstepcounter{lttheorem}%
+  \LT@FloatLocal
+  \begin{tcolorbox}[ltbox, colframe=theorem, colback=theorem!7!white]
+    \noindent{\bfseries\color{theorem}\theoremname~\thelttheorem
+      \IfValueT{#1}{\ （#1）}}\par\nobreak\smallskip
+    \ignorespaces
+}{%
+  \end{tcolorbox}%
 }
-\providecommand{\B}[1]{\LoneHighlight{#1}}% 向后兼容
+
+\NewDocumentEnvironment{proposition}{o}{%
+  \refstepcounter{ltproposition}%
+  \LT@FloatLocal
+  \begin{tcolorbox}[ltbox, colframe=proposition, colback=proposition!7!white]
+    \noindent{\bfseries\color{proposition}\propositionname~\theltproposition
+      \IfValueT{#1}{\ （#1）}}\par\nobreak\smallskip
+    \ignorespaces
+}{%
+  \end{tcolorbox}%
+}
+
+\NewDocumentEnvironment{corollary}{o}{%
+  \refstepcounter{ltcorollary}%
+  \LT@FloatLocal
+  \begin{tcolorbox}[ltbox, colframe=corollary, colback=corollary!7!white]
+    \noindent{\bfseries\color{corollary}\corollaryname~\theltcorollary
+      \IfValueT{#1}{\ （#1）}}\par\nobreak\smallskip
+    \ignorespaces
+}{%
+  \end{tcolorbox}%
+}
+
+\NewDocumentEnvironment{lemma}{o}{%
+  \refstepcounter{ltlemma}%
+  \LT@FloatLocal
+  \begin{tcolorbox}[ltbox, colframe=lemma, colback=lemma!7!white]
+    \noindent{\bfseries\color{lemma}\lemmaname~\theltlemma
+      \IfValueT{#1}{\ （#1）}}\par\nobreak\smallskip
+    \ignorespaces
+}{%
+  \end{tcolorbox}%
+}
+
+\NewDocumentEnvironment{axiom}{o}{%
+  \refstepcounter{ltaxiom}%
+  \LT@FloatLocal
+  \begin{tcolorbox}[ltbox, colframe=qiancheng, colback=qiancheng!7!white]
+    \noindent{\bfseries\color{qiancheng}\axiomname~\theltaxiom
+      \IfValueT{#1}{\ （#1）}}\par\nobreak\smallskip
+    \ignorespaces
+}{%
+  \end{tcolorbox}%
+}
+
+\NewDocumentEnvironment{postulate}{o}{%
+  \refstepcounter{ltaxiom}%
+  \LT@FloatLocal
+  \begin{tcolorbox}[ltbox, colframe=qiancheng, colback=qiancheng!7!white]
+    \noindent{\bfseries\color{qiancheng}\postulatename~\theltaxiom
+      \IfValueT{#1}{\ （#1）}}\par\nobreak\smallskip
+    \ignorespaces
+}{%
+  \end{tcolorbox}%
+}
+
+\NewDocumentEnvironment{property}{o}{%
+  \refstepcounter{ltproperty}%
+  \LT@FloatLocal
+  \begin{tcolorbox}[ltbox, colframe=qiancheng, colback=qiancheng!7!white]
+    \noindent{\bfseries\color{qiancheng}\propertyname~\theltproperty
+      \IfValueT{#1}{\ （#1）}}\par\nobreak\smallskip
+    \ignorespaces
+}{%
+  \end{tcolorbox}%
+}
+
+% --- 例题：内容盒，注（题源）直接进标题行 -----------------------------------
+\NewDocumentEnvironment{example}{o}{%
+  \refstepcounter{ltexample}%
+  \LT@FloatLocal
+  \begin{tcolorbox}[ltcontent, colframe=example, colback=example!5!white]
+    \noindent{\bfseries\color{example}\examplename~\theltexample
+      \IfValueT{#1}{\ （#1）}}\par\nobreak\smallskip
+    \ignorespaces
+}{%
+  \end{tcolorbox}%
+}
+
+% --- 解：不编号，跟在例题之后，安静的中性色 ---------------------------------
+\NewDocumentEnvironment{solution}{o}{%
+  \par\smallskip
+  \noindent{\bfseries\color{InkMuted}\solutionname\IfValueT{#1}{\ （#1）}}\,%
+  \ignorespaces
+}{%
+  \par\smallskip
+}
+
+% ============================================================================
+%  美术标题栏模式（类选项 boxart）：复刻原版孤星笔记模板的标题盒
+%  左右两张预渲染矢量图（assets/pdf/<色>_1/2.pdf，含 Rhine logo、竖排中文
+%  环境名、英文大字与三色条，全部为路径轮廓，无字体依赖）+ 中间色块标签。
+%  盒体回到原版形制：主题色 2.5pt 粗框 + qianbai 底；盒内正文字体不改
+%  （书籍正文不切楷体）。工程需有 assets/tikz 源并已渲染出 assets/pdf；
+%  换主题后重跑 python tools/lonetrail.py 的渲染即同步换色。
+% ============================================================================
+\iflt@boxart
+\newlength{\LT@artwd}
+% 带名称：左图 + 名称色块 + 右图
+% 注意不要写 \XeTeXinterchartokenstate=0（原笔记版有）：它会关掉 xeCJK 的
+% 字符路由，色块里的中文会回落到西文字体变豆腐块。
+\newcommand{\LT@ArtBar}[3]{%
+  \sbox0{\fontsize{14}{22}\selectfont\heiti #2}%
+  \settowidth{\LT@artwd}{\usebox0}%
+  \begin{tabular}[c]{@{}c@{}c@{}c@{}}
+    \raisebox{-\height+12pt}{\includegraphics[height=24pt]{assets/pdf/#1.pdf}} &
+    \raisebox{-\height+12pt}{%
+      \colorbox{heise}{%
+        \parbox[c][18pt][c]{\LT@artwd}{%
+          \centering\fontsize{14}{22}\selectfont\heiti
+          \color{mibai} #2\vspace{-4pt}}}} &
+    \raisebox{-\height+12pt}{\includegraphics[height=24pt]{assets/pdf/#3.pdf}}
+  \end{tabular}%
+}
+% 不带名称：左右图直接相接（竖排中文环境名在左图里）
+\newcommand{\LT@ArtBarPlain}[2]{%
+  \begin{tabular}[c]{@{}c@{}c@{}}
+    \raisebox{-\height+12pt}{\includegraphics[height=24pt]{assets/pdf/#1.pdf}} &
+    \raisebox{-\height+12pt}{\includegraphics[height=24pt]{assets/pdf/#2.pdf}}
+  \end{tabular}%
+}
+\tcbset{
+  ltboxart/.style={
+    enhanced,
+    sharp corners,
+    breakable,
+    colback=qianbai,
+    boxrule=2.5pt,
+    arc=0pt,
+    fontupper=\normalfont,
+    halign upper=justify,
+    left=10pt,
+    right=10pt,
+    top=6pt,
+    bottom=6pt,
+    before skip=14pt,
+    after skip=14pt,
+    attach boxed title to top left={yshift=-2.5pt, xshift=0mm},
+    boxed title style={
+      boxrule=0pt,
+      boxsep=0pt,
+      top=-2.1pt,
+      bottom=0pt,
+      left=0pt,
+      right=0pt,
+      colback=qianbai,
+      baseline=\ht\strutbox
+    },
+  }
+}
+% 工厂：#1=环境名 #2=主题色名（计数器 lt<env>，名宏 <env>name 已在上文定义）
+\newcommand{\LT@ArtBox}[2]{%
+  \RenewDocumentEnvironment{#1}{o}{%
+    \refstepcounter{lt#1}%
+    \LT@FloatLocal
+    \IfValueTF{##1}{%
+      \begin{tcolorbox}[ltboxart, colframe=#2,
+        title={\LT@ArtBar{#2_1}{##1}{#2_2}}]%
+    }{%
+      \begin{tcolorbox}[ltboxart, colframe=#2,
+        title={\LT@ArtBarPlain{#2_1}{#2_2}}]%
+    }%
+    \ignorespaces
+  }{\end{tcolorbox}}%
+}
+\LT@ArtBox{definition}{definition}
+\LT@ArtBox{theorem}{theorem}
+\LT@ArtBox{proposition}{proposition}
+\LT@ArtBox{corollary}{corollary}
+\LT@ArtBox{lemma}{lemma}
+\LT@ArtBox{example}{example}
+\fi
+
+% --- 习题 -------------------------------------------------------------------
+\NewDocumentEnvironment{exercise}{o}{%
+  \refstepcounter{bookexercise}%
+  \par\smallskip\noindent
+  {\bfseries\color{main}\exercisename~\thebookexercise
+    \IfValueT{#1}{\ （#1）}}\quad\ignorespaces
+}{%
+  \par\smallskip
+}
+
+% 节末练习块（连续编号）
+\newenvironment{exercises}{%
+  \par\vspace{0.6em}\noindent
+  {\bfseries\color{main}\exercisename}\par\smallskip
+  \ignorespaces
+}{%
+  \par\vspace{0.6em}%
+}
+
+% 章末练习集（标题 + 连续编号）
+\newenvironment{Exercises}{%
+  \markright{习题}%
+  \addcontentsline{toc}{section}{习题}%
+  \par\vspace{0.8em}%
+  \begin{center}{\large\bfseries\color{InkBrown}\heiti 习题}\end{center}%
+  \vspace{0.5em}\small
+  \list{\bfseries\thebookexercise.}{%
+    \usecounter{bookexercise}%
+    \renewcommand{\theHbookexercise}{Exercise.\thechapter.\arabic{bookexercise}}%
+  }%
+}{%
+  \endlist\normalsize\par\vspace{0.8em}%
+}
+
+% --- 证明 -------------------------------------------------------------------
+\NewDocumentEnvironment{proof}{o}{%
+  \par\smallskip\noindent
+  {\bfseries\color{InkMuted}\proofname\IfValueT{#1}{\ （#1）}}\;
+  \color{InkJoint}\ignorespaces
+}{%
+  \hfill{\color{InkMuted}$\square$}\par\smallskip
+}
+
+% ============================================================================
+%  注：短 → 边栏；长 → 正文静音块（与原书阈值一致，行为不变）
+% ============================================================================
+\ExplSyntaxOn
+\bool_new:N \l_lt_remark_long_bool
+\cs_new_protected:Npn \lt_remark_classify:n #1
+  {
+    \bool_set_false:N \l_lt_remark_long_bool
+    \int_compare:nNnT { \tl_count:n {#1} } > { 64 }
+      { \bool_set_true:N \l_lt_remark_long_bool }
+    \bool_if:NF \l_lt_remark_long_bool
+      {
+        \regex_match:nnTF
+          {
+            \\begin\s*\{
+              ( equation|align|alignat|flalign|gather|multline|itemize|enumerate|
+                compactitem|compactenum|tikzpicture|multicols|choices|figure|table|
+                tabular|tabularx )\s*\*?\s*\}
+            | \\\[
+            | \\par\b
+          }
+          { \tl_to_str:n {#1} }
+          { \bool_set_true:N \l_lt_remark_long_bool }
+          { }
+      }
+  }
+\cs_new_protected:Npn \lt_remark_margin:nn #1 #2
+  {
+    \refstepcounter{ltremark}%
+    \sidenote
+      {
+        \textbf{\remarkname~\theltremark\tl_if_novalue:nF {#1} {\,(#1)}}
+        \par #2
+      }
+  }
+\cs_new_protected:Npn \lt_remark_main:nn #1 #2
+  {
+    \refstepcounter{ltremark}%
+    \begin{tcolorbox}[ltremarkbox]
+      \LT@FloatLocal
+      {\footnotesize\bfseries\color{InkMuted}\remarkname~\theltremark
+        \tl_if_novalue:nF {#1} {\,(#1)}}\par\nobreak
+      {\footnotesize\color{InkMuted}\raggedright #2\par}
+    \end{tcolorbox}%
+  }
+\cs_new_protected:Npn \lt_remark_auto:nn #1 #2
+  { \lt_remark_classify:n {#2} \bool_if:NTF \l_lt_remark_long_bool
+      { \lt_remark_main:nn {#1}{#2} } { \lt_remark_margin:nn {#1}{#2} } }
+\cs_set_eq:NN \LTRemarkAuto \lt_remark_auto:nn
+\ExplSyntaxOff
+
+\NewDocumentEnvironment{remark}{o +b}{\LTRemarkAuto{#1}{#2}}{}
+% 显式强制正文形式（长注 / 人工指定）
+\NewDocumentEnvironment{remark*}{o +b}{%
+  \refstepcounter{ltremark}%
+  \begin{tcolorbox}[ltremarkbox]
+    \LT@FloatLocal
+    {\footnotesize\bfseries\color{InkMuted}\remarkname~\theltremark
+      \IfValueT{#1}{\ （#1）}}\par\nobreak
+    {\footnotesize\color{InkMuted}\raggedright #2\par}
+  \end{tcolorbox}%
+}{}
+
+% ============================================================================
+%  盒子内的浮动与边注本地化
+%  tcolorbox 内不允许浮动体（"Not in outer par mode"），figure/table 就地锁 [H]；
+%  \marginpar 在盒内会丢，就地降级为行内括注。
+% ============================================================================
+\newcommand{\LT@FloatLocal}{%
+  \let\LT@saved@figure\figure
+  \let\LT@saved@table\table
+  \def\figure{\@ifnextchar[{\LT@fig@opt}{\LT@saved@figure[H]}}%
+  \def\LT@fig@opt[##1]{\LT@saved@figure[H]}%
+  \def\table{\@ifnextchar[{\LT@tbl@opt}{\LT@saved@table[H]}}%
+  \def\LT@tbl@opt[##1]{\LT@saved@table[H]}%
+  \let\LT@saved@sidenote\sidenote
+  \def\sidenote{\@ifnextchar[{\LT@sn@opt}{\LT@sn@plain}}%
+  \def\LT@sn@opt[##1]##2{\LT@sn@body{##2}}%
+  \def\LT@sn@plain##1{\LT@sn@body{##1}}%
+}
+\newcommand{\LT@sn@body}[1]{{\footnotesize\color{InkMuted}（#1）}}
+
+% ============================================================================
+%  章首阅读提示 / 延伸讨论（正文内容盒）
+% ============================================================================
+\newtcolorbox{wenxintishi}[1][阅读提示]{%
+  ltbox, colframe=InkMuted, colback=InkWash!45!white, leftrule=4pt,
+  top=7pt, bottom=7pt, before skip=10pt, after skip=11pt,
+  title={{\bfseries\color{InkBrown}\heiti #1}},
+  coltitle=InkBrown, colbacktitle=InkWash!45!white,
+  fonttitle=\bfseries,
+  attach boxed title to top left={yshift=-\tcboxedtitleheight/2,
+    xshift=\tcboxedtitlewidth/4},
+  boxed title style={boxrule=0pt, colframe=InkWash!45!white,
+    colback=InkWash!45!white}
+}
+
+\NewDocumentEnvironment{analysispath}{O{延伸讨论}}{%
+  \par\vspace{0.7em}%
+  \noindent{\sffamily\bfseries\small\color{main} #1}\par\nobreak
+  \vspace{0.35em}%
+  \ignorespaces
+}{%
+  \par\vspace{0.5em}%
+}
+
+% ============================================================================
+%  选择题选项统一环境
+% ============================================================================
+\newlist{choices}{enumerate}{1}
+\setlist[choices]{
+  label = \textbf{\Alph*.},
+  labelsep = 0.5em,
+  leftmargin = *,
+  itemsep = 0.35em,
+  topsep = 0.4em,
+  parsep = 0pt,
+  partopsep = 0pt
+}
+
+% ============================================================================
+%  习题解答收集：exsol 收体，附录按章统一输出
+% ============================================================================
+\newif\iflt@noanswer
+\AtBeginDocument{%
+  \@ifundefined{ELEGANT@result}{}{%
+    \ifdefstring{\ELEGANT@result}{noanswer}{\lt@noanswertrue}{}}%
+}
+\def\lt@sol@chlist{}
+% 追加一条解答到 per-chapter 存储宏。
+% 正文 #3 必须经 toks 寄存器原样存入 —— 若直接 \xdef 会把解答体里的
+% \begin{enumerate}[...]、\fpeval 等可展开物当场展开炸掉。
+\newtoks\lt@sol@existing
+\newtoks\lt@sol@prefixtoks
+\newtoks\lt@sol@bodytoks
+\newcommand{\lt@sol@append}[3]{%
+  \@ifundefined{lt@sol@ch@#1}{%
+    \expandafter\gdef\csname lt@sol@ch@#1\endcsname{}%
+    \ifx\lt@sol@chlist\empty
+      \xdef\lt@sol@chlist{#1}%
+    \else
+      \xdef\lt@sol@chlist{\lt@sol@chlist,#1}%
+    \fi
+  }{}%
+  \begingroup
+    \lt@sol@existing\expandafter\expandafter\expandafter{%
+      \csname lt@sol@ch@#1\endcsname}%
+    \lt@sol@prefixtoks\expandafter{#2}%
+    \lt@sol@bodytoks{#3}%
+    \expandafter\xdef\csname lt@sol@ch@#1\endcsname{%
+      \the\lt@sol@existing
+      \the\lt@sol@prefixtoks
+      \the\lt@sol@bodytoks
+    }%
+  \endgroup
+}
+\newcommand{\lt@sol@emit}[1]{%
+  \@ifundefined{lt@sol@ch@#1}{}{\csname lt@sol@ch@#1\endcsname}%
+}
+% 章标题捕获（解答按「第N章 章名」分节）
+\let\lt@orig@makechapterhead\@makechapterhead
+\def\@makechapterhead#1{%
+  \if@mainmatter
+    \expandafter\gdef\csname lt@sol@chtitle@\the\c@chapter\endcsname{#1}%
+  \fi
+  \lt@orig@makechapterhead{#1}%
+}
+
+\NewDocumentEnvironment{exsol}{+b}{%
+  \iflt@noanswer\else
+    \refstepcounter{exsolcount}%
+    \xdef\lt@sol@prefix{%
+      \noexpand\par\noexpand\noindent
+      \noexpand\textbf{\noexpand\color{main}\the\c@chapter.\the\c@exsolcount.}%
+      \noexpand\quad
+      \noexpand\textbf{\noexpand\color{main}\noexpand\solutionname}%
+      \noexpand\quad
+    }%
+    \lt@sol@append{\thechapter}{\lt@sol@prefix}{#1\par}%
+  \fi
+}{}
+
+% 对外接口
+\newcommand{\printexercisesolutions}[1]{\lt@sol@emit{#1}}
+\newcommand{\printallexercisesolutions}{%
+  \ifx\lt@sol@chlist\empty
+  \else
+    \chapter{习题解答}%
+    \@for\lt@sol@curch:=\lt@sol@chlist\do{%
+      \expandafter\lt@sol@emitone\expandafter{\lt@sol@curch}}%
+  \fi
+}
+\newcommand{\lt@sol@emitone}[1]{%
+  \@ifundefined{lt@sol@ch@#1}{}{%
+    \section*{第#1章 \csname lt@sol@chtitle@#1\endcsname}%
+    \addcontentsline{toc}{section}{第#1章 \csname lt@sol@chtitle@#1\endcsname}%
+    \csname lt@sol@ch@#1\endcsname}%
+}
+% 回到类文件的 catcode 上下文（.cls 内 @ 为 letter）
